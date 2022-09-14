@@ -184,12 +184,15 @@ double getMaxS(int x, int y) {           //获得当前（x,y）状态下的最大Q值
 void getPath() {  //打印最终路径
 	int x = startx;
 	int y = starty;
+	int direction = 0;
+	double maxS = 0;
 	fill(path[0], path[0] + gridX * gridY, 0);
 	while (true) {
 		path[x][y] = 2;
 		if (M[x][y] == 1) break;
-		int direction = 0;
-		double maxS = 0;
+
+		direction = 0;
+		maxS = 0;
 		for (int i = 0; i < 4; i++) {
 			if (Q[x][y][i] > maxS) {
 				direction = i;
@@ -212,6 +215,10 @@ void getPath() {  //打印最终路径
 	}
 }
 
+void updateQ(int x, int y, int direction, double maxS) {
+	Q[x][y][direction] = double(R[x][y][direction]) + lamda * maxS;
+}
+
 void train2(int epoch) { //训练epoch轮次
 	int successNum = 0;
 	for (int i = 0; i < epoch; i++) {
@@ -220,6 +227,7 @@ void train2(int epoch) { //训练epoch轮次
 		int action_x = -1, action_y = -1;
 		int direction = -1;
 		int try_time = 0;
+		double maxS = 0.0;
 		while (true) {
 			//cout << start_x << " " << start_y << endl;
 			if (try_time > maxTry) break;
@@ -229,8 +237,8 @@ void train2(int epoch) { //训练epoch轮次
 				break;
 			}
 
-			double maxS = getMaxS(action_x, action_y);
-			Q[start_x][start_y][direction] = double(R[start_x][start_y][direction]) + lamda * maxS;
+			maxS = getMaxS(action_x, action_y);
+			updateQ(start_x, start_y, direction, maxS);
 
 			start_x = action_x;
 			start_y = action_y;
