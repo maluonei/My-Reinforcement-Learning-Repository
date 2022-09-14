@@ -10,27 +10,26 @@ const int gridY = 10;
 const int finalx = 5;
 const int finaly = 5;
 
-int epoch = 20;//Éè¶¨ÑµÁ·´ÎÊı
-int maxTry = 1000;//ÈômaxTry´ÎÃ»ÓĞ½áÊøÒ»ÂÖÔòÖØĞÂ¿ªÊ¼
-int randomSeed = 100;//Ëæ»úÊıÖÖ×Ó
-int startx = 2; //ÆğÊ¼µãxÓëy
+int epoch = 20;//è®¾å®šè®­ç»ƒæ¬¡æ•°
+int maxTry = 1000;//è‹¥maxTryæ¬¡æ²¡æœ‰ç»“æŸä¸€è½®åˆ™é‡æ–°å¼€å§‹
+int randomSeed = 100;//éšæœºæ•°ç§å­
+int startx = 2; //èµ·å§‹ç‚¹xä¸y
 int starty = 2;
-int endx = 8;   //ÖÕµãxÓëy
+int endx = 8;   //ç»ˆç‚¹xä¸y
 int endy = 9;
-int maxRandomNum = 1000000;  //Ëæ»úÊıÉèÖÃ
-double chance = 0.9;         //1-chanceÎªÑ¡ÔñËæ»ú²ßÂÔµÄ¸ÅÂÊ
-double lamda = 0.8;          //Ë¥¼õÖµ
-double obstacleChance = 0.3; //µØÍ¼ÉÏÕÏ°­Éú³É¸ÅÂÊ
+int maxRandomNum = 1000000;  //éšæœºæ•°è®¾ç½®
+double chance = 0.9;         //1-chanceä¸ºé€‰æ‹©éšæœºç­–ç•¥çš„æ¦‚ç‡
+double lamda = 0.8;          //è¡°å‡å€¼
+double obstacleChance = 0.3; //åœ°å›¾ä¸Šéšœç¢ç”Ÿæˆæ¦‚ç‡
 
-int M[gridX][gridY];         //Map: -1ÎªÕÏ°­£¬ 0Îª¿ÉÒÔ×ß, 1ÎªÖÕµã
-int path[gridX][gridY];      //path¾ØÕó£¬ÓÃÀ´»æÖÆ×îÖÕÂ·¾¶
-long R[gridX][gridY][4];     //rewardÖµ¾ØÕó 
-double Q[gridX][gridY][4];   //Ñ§Ï°µ½µÄÖªÊ¶,Q¾ØÕó
-//int previous[gridX][gridY];
+int M[gridX][gridY];         //Map: -1ä¸ºéšœç¢ï¼Œ 0ä¸ºå¯ä»¥èµ°, 1ä¸ºç»ˆç‚¹
+int path[gridX][gridY];      //pathçŸ©é˜µï¼Œç”¨æ¥ç»˜åˆ¶æœ€ç»ˆè·¯å¾„
+long R[gridX][gridY][4];     //rewardå€¼çŸ©é˜µ 
+double Q[gridX][gridY][4];   //å­¦ä¹ åˆ°çš„çŸ¥è¯†,QçŸ©é˜µ
 int nextStep[4][2] = { -1,  0,
 						0, -1,
 						1,  0,
-						0,  1 };  //¿ÉÒÔĞĞ¶¯µÄËÄ¸ö·½Ïò
+						0,  1 };  //å¯ä»¥è¡ŒåŠ¨çš„å››ä¸ªæ–¹å‘
 //left--0--i-1
 //down--1--j-1
 //right--2--i+1
@@ -44,21 +43,21 @@ struct Point {
 };
 
 
-int getRandomChance() {    //Éú³É[0£¬maxRandomNum-1]Ëæ»úÊı
+int getRandomChance() {    //ç”Ÿæˆ[0ï¼ŒmaxRandomNum-1]éšæœºæ•°
 	static uniform_int_distribution<unsigned >u1(0, maxRandomNum - 1);
 	static default_random_engine e1;
 	return u1(e1);
 }
 
-int getRandomNumber(int number) {    //Éú³É[0:number-1]Ëæ»úÊı
+int getRandomNumber(int number) {    //ç”Ÿæˆ[0:number-1]éšæœºæ•°
 	return getRandomChance() * (number + 1) / maxRandomNum;
 }
 
-bool isSmaller(double chance) {      //½øĞĞÒ»´Î[0,1]Ëæ»ú£¬Ëæ»úÖµĞ¡ÓÚchanceµÄ¸ÅÂÊ
+bool isSmaller(double chance) {      //è¿›è¡Œä¸€æ¬¡[0,1]éšæœºï¼Œéšæœºå€¼å°äºchanceçš„æ¦‚ç‡
 	return getRandomChance() < maxRandomNum * chance;
 }
 
-void initRandomGenerator() {       //³õÊ¼»¯Ëæ»úÊıÉú³ÉÆ÷
+void initRandomGenerator() {       //åˆå§‹åŒ–éšæœºæ•°ç”Ÿæˆå™¨
 	for (int i = 0; i < randomSeed; i++) {
 		getRandomNumber(0);
 	}
@@ -67,7 +66,7 @@ void initRandomGenerator() {       //³õÊ¼»¯Ëæ»úÊıÉú³ÉÆ÷
 void initM() {
 	for (int i = 0; i < gridX; i++) {
 		for (int j = 0; j < gridY; j++) {
-			if (isSmaller(0.3)) {   //°Ù·ÖÖ®30µÄµØÍ¼¸ñ×ÓÊÇÕÏ°­
+			if (isSmaller(0.3)) {   //ç™¾åˆ†ä¹‹30çš„åœ°å›¾æ ¼å­æ˜¯éšœç¢
 				M[i][j] = -1;
 			}
 			else {
@@ -116,7 +115,7 @@ void initR() {
 	}
 }
 
-void chooseRandomAction(int& x, int& y, int& _x, int& _y, int& direction) {  //Ëæ»ú²ßÂÔ
+void chooseRandomAction(int& x, int& y, int& _x, int& _y, int& direction) {  //éšæœºç­–ç•¥
 	//cout << "Random\n";
 	vector<Point> nexts;
 	for (int j = 0; j < 4; j++) {
@@ -141,7 +140,7 @@ void chooseRandomAction(int& x, int& y, int& _x, int& _y, int& direction) {  //Ë
 	}
 }
 
-void chooseMaxAction(int& x, int& y, int& _x, int& _y, int& direction) {   //×î´ó»¯Ñ¡Ôñ²ßÂÔ
+void chooseMaxAction(int& x, int& y, int& _x, int& _y, int& direction) {   //æœ€å¤§åŒ–é€‰æ‹©ç­–ç•¥
 	//cout << "Max\n";
 	int _direction = -1;
 	double maxS = 0;
@@ -164,7 +163,7 @@ void chooseMaxAction(int& x, int& y, int& _x, int& _y, int& direction) {   //×î´
 	}
 }
 
-void chooseNextAction(int& x, int& y, int& _x, int& _y, int& direction, double chance) {  //¸ù¾İ¸ÅÂÊËæ»úÑ¡ÔñÉÏÁĞÁ½ÖÖ²ßÂÔµÄÒ»ÖÖ
+void chooseNextAction(int& x, int& y, int& _x, int& _y, int& direction, double chance) {  //æ ¹æ®æ¦‚ç‡éšæœºé€‰æ‹©ä¸Šåˆ—ä¸¤ç§ç­–ç•¥çš„ä¸€ç§
 	if (isSmaller(chance)) {
 		chooseMaxAction(x, y, _x, _y, direction);
 	}
@@ -173,7 +172,7 @@ void chooseNextAction(int& x, int& y, int& _x, int& _y, int& direction, double c
 	}
 }
 
-double getMaxS(int x, int y) {           //»ñµÃµ±Ç°£¨x,y£©×´Ì¬ÏÂµÄ×î´óQÖµ
+double getMaxS(int x, int y) {           //è·å¾—å½“å‰ï¼ˆx,yï¼‰çŠ¶æ€ä¸‹çš„æœ€å¤§Qå€¼
 	double maxnum = 0;
 	for (int i = 0; i < 4; i++) {
 		if (R[x][y][i] != -1 && Q[x][y][i] > maxnum) maxnum = Q[x][y][i];
@@ -181,7 +180,7 @@ double getMaxS(int x, int y) {           //»ñµÃµ±Ç°£¨x,y£©×´Ì¬ÏÂµÄ×î´óQÖµ
 	return maxnum;
 }
 
-void getPath() {  //´òÓ¡×îÖÕÂ·¾¶
+void getPath() {  //æ‰“å°æœ€ç»ˆè·¯å¾„
 	int x = startx;
 	int y = starty;
 	int direction = 0;
@@ -219,7 +218,7 @@ void updateQ(int x, int y, int direction, double maxS) {
 	Q[x][y][direction] = double(R[x][y][direction]) + lamda * maxS;
 }
 
-void train2(int epoch) { //ÑµÁ·epochÂÖ´Î
+void train2(int epoch) { //è®­ç»ƒepochè½®æ¬¡
 	int successNum = 0;
 	for (int i = 0; i < epoch; i++) {
 		cerr << "epoch:" << i << endl << std::flush;
@@ -263,112 +262,18 @@ void printQ() {
 }
 
 int main() {
-	initRandomGenerator(); //³õÊ¼»¯Ëæ»úÊıÉú³ÉÆ÷
-	initM(); //³õÊ¼»¯µØÍ¼
-	initR(); //³õÊ¼»¯reward¾ØÕó
-	initQ(); //³õÊ¼»¯Q¾ØÕó
+	initRandomGenerator(); //åˆå§‹åŒ–éšæœºæ•°ç”Ÿæˆå™¨
+	initM(); //åˆå§‹åŒ–åœ°å›¾
+	initR(); //åˆå§‹åŒ–rewardçŸ©é˜µ
+	initQ(); //åˆå§‹åŒ–QçŸ©é˜µ
 
-	train2(epoch);//ÑµÁ·
+	train2(epoch);//è®­ç»ƒ
 	cout << "***************************************\n";
 
-	printM();//´òÓ¡µØÍ¼
+	printM();//æ‰“å°åœ°å›¾
 	cout << "***************************************\n";
 
-	getPath();//ÉèÖÃÆğµã,»æ»­Â·¾¶
+	getPath();//è®¾ç½®èµ·ç‚¹,ç»˜ç”»è·¯å¾„
 	cout << "***************************************\n";
 	return 0;
 }
-
-
-
-/*
-void train(int epoch, int type) {
-	if (type == 0) {
-		int successNum = 0;
-		for (int i = 0; i < epoch; i++) {
-			cerr << "epoch:" << i << endl << std::flush;
-			//fill(previous[0], previous[0] + gridX * gridY, 0);
-			int start_x = -1, start_y = -1;
-			getRandomNumber(start_x, start_y);
-			int action_x = -1, action_y = -1;
-			int direction = -1;
-			int try_time = 0;
-			while (true) {
-				if (try_time > 300) break;
-				try_time++;
-				//cout << start_x << " " << start_y << endl << flush;
-				chooseNextAction(start_x, start_y, action_x, action_y, direction, chance);
-				//cout << direction << endl;
-				if (direction == -1) {
-					break;
-				}
-
-				//if (M[action_x][action_y] == 1 || M[action_x][action_y] == -1) {
-				//	break;
-				//}
-
-				//previous[start_x][start_y] = 1;
-				double maxS = getMaxS(action_x, action_y);
-				Q[start_x][start_y][direction] = double(R[start_x][start_y][direction]) + lamda * maxS;
-
-				start_x = action_x;
-				start_y = action_y;
-
-				if (M[start_x][start_y] == 1 || M[start_x][start_y] == -1) {
-					break;
-				}
-			}
-		}
-	}
-	else if (type == 1) {
-		int successNum = 0;
-		int index = 0;
-		int testnum = 0;
-		int i = 0;
-		while (index < gridX * gridY) {
-			cerr << "epoch:" << i << endl << std::flush;
-			i++;
-			//fill(previous[0], previous[0] + gridX * gridY, 0);
-			int start_x = -1, start_y = -1;
-			while (index < gridX * gridY) {
-				start_x = index / gridX;
-				start_y = index % gridX;
-				if (M[start_x][start_y] != -1) {
-					if (testnum < 3) testnum++;
-					else {
-						testnum = 0;
-						index++;
-					}
-					break;
-				}
-				else {
-					index++;
-					break;
-				}
-			}
-			int action_x = -1, action_y = -1;
-			int direction = -1;
-			while (true) {
-				//cout << start_x << " " << start_y << endl << flush;
-				chooseNextAction(start_x, start_y, action_x, action_y, direction, chance);
-				//cout << direction << endl;
-				if (direction == -1) {
-					break;
-				}
-				//previous[start_x][start_y] = 1;
-				double maxS = getMaxS(action_x, action_y);
-				Q[start_x][start_y][direction] = double(R[start_x][start_y][direction]) + lamda * maxS;
-
-				start_x = action_x;
-				start_y = action_y;
-
-				if (M[start_x][start_y] == 1) {
-					//cout << start_x << " " << start_y << endl;
-					successNum++;
-					break;
-				}
-			}
-		}
-	}
-}
-*/
