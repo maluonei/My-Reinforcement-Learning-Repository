@@ -5,10 +5,8 @@
 
 using namespace std;
 
-const int gridX = 10;
-const int gridY = 10;
-const int finalx = 5;
-const int finaly = 5;
+const int gridX = 10; //地图行数
+const int gridY = 10; //地图列数
 
 int epoch = 20;//设定训练次数
 int maxTry = 1000;//若maxTry次没有结束一轮则重新开始
