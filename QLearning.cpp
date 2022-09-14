@@ -25,9 +25,9 @@ int path[gridX][gridY];      //path矩阵，用来绘制最终路径
 long R[gridX][gridY][4];     //reward值矩阵 
 double Q[gridX][gridY][4];   //学习到的知识,Q矩阵
 int nextStep[4][2] = { -1,  0,
-						0, -1,
-						1,  0,
-						0,  1 };  //可以行动的四个方向
+			0, -1,
+			1,  0,
+			0,  1 };  //可以行动的四个方向
 //left--0--i-1
 //down--1--j-1
 //right--2--i+1
