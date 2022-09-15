@@ -114,7 +114,7 @@ void initR() {
 	}
 }
 
-void chooseRandomAction(int& x, int& y, int& direction) {  //随机策略
+void chooseRandomAction(int x, int y, int& direction) {  //随机策略
 	//cout << "Random\n";
 	vector<int> nexts;
 	for (int j = 0; j < 4; j++) {
@@ -135,7 +135,7 @@ void chooseRandomAction(int& x, int& y, int& direction) {  //随机策略
 	}
 }
 
-void chooseMaxAction(int& x, int& y, int& direction) {   //最大化选择策略
+void chooseMaxAction(int x, int y, int& direction) {   //最大化选择策略
 	//cout << "Max\n";
 	int _direction = -1;
 	double maxQ = 0;
@@ -156,7 +156,7 @@ void chooseMaxAction(int& x, int& y, int& direction) {   //最大化选择策略
 	}
 }
 
-void chooseNextAction(int& x, int& y, int& direction, double chance) {  //根据概率随机选择上列两种策略的一种
+void chooseNextAction(int x, int y, int& direction, double chance) {  //根据概率随机选择上列两种策略的一种
 	if (isSmaller(chance)) {
 		chooseMaxAction(x, y, direction);
 	}
