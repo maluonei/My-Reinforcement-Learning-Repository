@@ -2,30 +2,35 @@
 #include<algorithm>
 #include<random>
 #include<iomanip>
+#include<Windows.h>
+#include<ctime>
 
 using namespace std;
 
-const int gridX = 10; //地图行数
-const int gridY = 10; //地图列数
+const int gridX = 15; //地图行数
+const int gridY = 15; //地图列数
 
-int epoch = 50;//设定训练次数
+int epoch = 80;//设定训练次数
 int maxTry = 1000;//若maxTry次没有结束一轮则重新开始
-int randomSeed = 100;//随机数种子
-int startx = 2; //起始点x与y
-int starty = 2;
-int endx = 8;   //终点x与y
-int endy = 9;
-int maxRandomNum = 1000000;  //随机数设置
-double chance = 0.9;         //1-chance为选择随机策略的概率
-double alpha = 0.8;          //sasra算法中的迭代步长
-double lamda = 0.8;          //衰减值
-double obstacleChance = 0.3; //地图上障碍生成概率
+int randomSeed = 300;//随机数种子
+int startx = 0; //起始点x与y
+int starty = 1;
+int endx = 13;   //终点x与y
+int endy = 14;
+int maxRandomNum = 1000000;   //随机数设置
+int screenFlashTimeSlice = 0; //如果可视化，每一步进行时间（毫秒）
+double chance = 0.9;          //1-chance为选择随机策略的概率
+double alpha = 0.8;           //sasra算法中的迭代步长
+double lamda = 0.8;           //衰减值
+double obstacleChance = 0.25; //地图上障碍生成概率
+bool isAddRestriction = false;//是否碰到障碍物就停下来进行洗下一轮
+bool isVisuable = true;       //是否可视化训练过程（会很慢）
 
 int M[gridX][gridY];         //Map: -1为障碍， 0为可以走, 1为终点
 int path[gridX][gridY];      //path矩阵，用来绘制最终路径
 long R[gridX][gridY][4];     //reward值矩阵 
 double Q[gridX][gridY][4];   //学习到的知识,Q矩阵
-//int previous[gridX][gridY];
+int previous[gridX][gridY];
 int nextStep[4][2] = { -1,  0,
 						0, -1,
 						1,  0,
@@ -80,10 +85,22 @@ void initQ() {
 	fill(Q[0][0], Q[0][0] + gridX * gridY * 4, 0);
 }
 
+void initPrevious() {
+	fill(previous[0], previous[0] + gridX * gridY, 0);
+}
+
 void printM() {
 	for (int i = 0; i < gridX; i++) {
 		for (int j = 0; j < gridY; j++) {
-			cout << setw(3) << M[i][j] << " ";
+			if (M[i][j] == -1) {
+				cout << "#";
+			}
+			else if (M[i][j] == 0) {
+				cout << " ";
+			}
+			else if (M[i][j] == 1) {
+				cout << "D";
+			}
 		}
 		cout << endl;
 	}
@@ -93,8 +110,8 @@ void initR() {
 	fill(R[0][0], R[0][0] + gridX * gridY * 4, -1);
 	for (int i = 0; i < gridX; i++) {
 		for (int j = 0; j < gridY; j++) {
-			if (i != 0 && M[i - 1][j] != -1) R[i][j][0] = 0;
-			if (j != 0 && M[i][j - 1] != -1) R[i][j][1] = 0;
+			if (i != 0 && i - 1 != 0 && M[i - 1][j] != -1) R[i][j][0] = 0;
+			if (j != 0 && j - 1 != 0 && M[i][j - 1] != -1) R[i][j][1] = 0;
 			if (i != gridX - 1 && M[i + 1][j] != -1) R[i][j][2] = 0;
 			if (j != gridY - 1 && M[i][j + 1] != -1) R[i][j][3] = 0;
 
@@ -119,7 +136,14 @@ void chooseRandomAction(int x, int y, int& direction) {  //随机策略
 	vector<int> nexts;
 	for (int j = 0; j < 4; j++) {
 		if (R[x][y][j] != -1) {
-			nexts.push_back(j);
+			if (!isAddRestriction) {
+				nexts.push_back(j);
+			}
+			else {
+				if (previous[x + nextStep[j][0]][y + nextStep[j][1]] == 0) {
+					nexts.push_back(j);
+				}
+			}
 		}
 	}
 	int randomNum = 0;
@@ -142,9 +166,17 @@ void chooseMaxAction(int x, int y, int& direction) {   //最大化选择策略
 	for (int i = 0; i < 4; i++) {
 		//if (R[x][y][i] != -1 && previous[x + nextStep[i][0]][y + nextStep[i][1]] == 0) {
 		if (R[x][y][i] != -1) {
-			if (Q[x][y][i] > maxQ) {
-				maxQ = Q[x][y][i];
-				_direction = i;
+			if (!isAddRestriction) {
+				if (Q[x][y][i] > maxQ) {
+					maxQ = Q[x][y][i];
+					_direction = i;
+				}
+			}
+			else {
+				if (Q[x][y][i] > maxQ && previous[x + nextStep[i][0]][y + nextStep[i][1]] == 0) {
+					maxQ = Q[x][y][i];
+					_direction = i;
+				}
 			}
 		}
 	}
@@ -180,13 +212,14 @@ void getPath() {  //打印最终路径
 	double maxQ = 0;
 	fill(path[0], path[0] + gridX * gridY, 0);
 	while (true) {
+		//cout << x << " " << y << endl;
 		path[x][y] = 2;
 		if (M[x][y] == 1) break;
 
 		direction = 0;
 		maxQ = 0;
 		for (int i = 0; i < 4; i++) {
-			if (Q[x][y][i] > maxQ) {
+			if (Q[x][y][i] >= maxQ && x + nextStep[i][0] >= 0 && x + nextStep[i][0] < gridX && y + nextStep[i][1] >= 0 && y + nextStep[i][1] < gridY && path[x + nextStep[i][0]][y + nextStep[i][1]] != 2) {
 				direction = i;
 				maxQ = Q[x][y][i];
 			}
@@ -201,7 +234,19 @@ void getPath() {  //打印最终路径
 	for (int i = 0; i < gridX; i++) {
 		for (int j = 0; j < gridY; j++) {
 			if (path[i][j] != 2 || M[i][j] == 1) path[i][j] = M[i][j];
-			cout << setw(3) << path[i][j] << " ";
+
+			if (path[i][j] == -1) {
+				cout << "#";
+			}
+			else if (path[i][j] == 0) {
+				cout << " ";
+			}
+			else if (path[i][j] == 1) {
+				cout << "D";
+			}
+			else if (path[i][j] == 2) {
+				cout << "*";
+			}
 		}
 		cout << endl;
 	}
@@ -215,16 +260,59 @@ void updateQ_Sasra(int state_x, int state_y, int direction, int next_state_x, in
 	Q[state_x][state_y][direction] += alpha * (R[state_x][state_y][direction] + lamda * Q[next_state_x][next_state_y][next_direction] - Q[state_x][state_y][direction]);
 }
 
+HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);//定义显示器句柄变量,并且这个只能在每个头文件中单独定义句柄和函数，否则无效
+void gotoxy(HANDLE hOut, int x, int y)//其中x，y是与正常理解相反的，注意区分
+{
+	COORD pos;
+	pos.X = x;             //横坐标
+	pos.Y = y;            //纵坐标
+	SetConsoleCursorPosition(hOut, pos);
+}
+
+void printMap(int epoch, int state_x, int state_y) {
+	//system("cls");
+	gotoxy(hOut, 0, 0);
+	cout << "training epoch:" << epoch << endl;
+	for (int i = 0; i < gridX; i++) {
+		//cout << "\r";
+		for (int j = 0; j < gridY; j++) {
+			if (i == state_x && j == state_y) {
+				cout << "*";
+			}
+			else {
+				if (M[i][j] == 0) cout << " ";
+				else if (M[i][j] == -1) cout << "#";
+				else if (M[i][j] == 1) cout << "D";
+			}
+		}
+		cout << endl;
+	}
+}
+
+void Delay(int time)
+{
+	clock_t  now = clock();
+	while (clock() - now < time);
+}
+
 void train_QLearning() { //训练epoch轮次
 	int successNum = 0;
 	for (int i = 0; i < epoch; i++) {
-		cerr << "epoch:" << i << endl << std::flush;
+		if (!isVisuable) {
+			cerr << "\repoch:" << i << std::flush;
+		}
+		if (isAddRestriction) initPrevious();
 		int state_x = startx, state_y = starty;
 		int next_state_x = -1, next_state_y = -1;
 		int direction = -1;
 		int try_time = 0;
 		double maxQ = 0.0;
 		while (true) {
+			if (isVisuable) {
+				printMap(i, state_x, state_y);
+				Sleep(screenFlashTimeSlice);
+			}
+			if (isAddRestriction) previous[state_x][state_y] = 1;
 			//cout << start_x << " " << start_y << endl;
 			if (try_time > maxTry) break;
 			try_time++;
@@ -252,7 +340,10 @@ void train_QLearning() { //训练epoch轮次
 void train_Sarsa() {
 	int successNum = 0;
 	for (int i = 0; i < epoch; i++) {
-		cerr << "epoch:" << i << endl << std::flush;
+		if (!isVisuable) {
+			cerr << "\repoch:" << i << std::flush;
+		}
+		if (isAddRestriction) initPrevious();
 		int state_x = startx, state_y = starty;
 		int next_state_x = -1, next_state_y = -1;
 		int direction = -1;
@@ -260,6 +351,11 @@ void train_Sarsa() {
 		int try_time = 0;
 		double maxQ = 0.0;
 		while (true) {
+			if (isVisuable) {
+				printMap(i, state_x, state_y);
+				Sleep(screenFlashTimeSlice);
+			}
+			if (isAddRestriction) previous[state_x][state_y] = 1;
 			//cout << start_x << " " << start_y << endl;
 			if (try_time > maxTry) break;
 			try_time++;
@@ -308,9 +404,9 @@ int main() {
 	initR(); //初始化reward矩阵
 	initQ(); //初始化Q矩阵
 
-	//train_QLearning();//训练
-	train_Sarsa();
-	cout << "***************************************\n";
+	train_QLearning();//训练
+	//train_Sarsa();
+	cout << "\n***************************************\n";
 
 	printM();//打印地图
 	cout << "***************************************\n";
