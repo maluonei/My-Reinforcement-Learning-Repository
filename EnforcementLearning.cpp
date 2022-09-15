@@ -9,7 +9,6 @@ using namespace std;
 
 const int gridX = 15; //地图行数
 const int gridY = 15; //地图列数
-
 int epoch = 80;//设定训练次数
 int maxTry = 1000;//若maxTry次没有结束一轮则重新开始
 int randomSeed = 300;//随机数种子
