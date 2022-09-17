@@ -6,24 +6,24 @@
 
 using namespace std;
 
-extern int epoch;//Éè¶¨ÑµÁ·´ÎÊı sarsa(lambda)Ëã·¨ËùĞèÂÖ´Î¸ü¶à
-extern int maxTry;//ÈômaxTry´ÎÃ»ÓĞ½áÊøÒ»ÂÖÔòÖØĞÂ¿ªÊ¼
-//extern int randomSeed;//Ëæ»úÊıÖÖ×Ó
-//extern int startx; //ÆğÊ¼µãxÓëy
+extern int epoch;//è®¾å®šè®­ç»ƒæ¬¡æ•° sarsa(lambda)ç®—æ³•æ‰€éœ€è½®æ¬¡æ›´å¤š
+extern int maxTry;//è‹¥maxTryæ¬¡æ²¡æœ‰ç»“æŸä¸€è½®åˆ™é‡æ–°å¼€å§‹
+//extern int randomSeed;//éšæœºæ•°ç§å­
+//extern int startx; //èµ·å§‹ç‚¹xä¸y
 //extern int starty;
-//extern int endx;   //ÖÕµãxÓëy
+//extern int endx;   //ç»ˆç‚¹xä¸y
 //extern int endy;
-extern int screenFlashTimeSlice; //Èç¹û¿ÉÊÓ»¯£¬Ã¿Ò»²½½øĞĞÊ±¼ä£¨ºÁÃë£©
-extern double chance;          //1-chanceÎªÑ¡ÔñËæ»ú²ßÂÔµÄ¸ÅÂÊ
-extern double alpha;           //sasraËã·¨ÖĞµÄµü´ú²½³¤
-extern double gamma;           //Ë¥¼õÖµ
-extern double lambda;          //sarsa(lambda)ÖĞµÄlambda
-//extern double obstacleChance; //µØÍ¼ÉÏÕÏ°­Éú³É¸ÅÂÊ
-extern bool isAddRestriction;//ÊÇ·ñÅöµ½ÕÏ°­Îï¾ÍÍ£ÏÂÀ´½øĞĞÏ´ÏÂÒ»ÂÖ
-extern bool isVisuable;       //ÊÇ·ñ¿ÉÊÓ»¯ÑµÁ·¹ı³Ì£¨»áºÜÂı£©
+extern int screenFlashTimeSlice; //å¦‚æœå¯è§†åŒ–ï¼Œæ¯ä¸€æ­¥è¿›è¡Œæ—¶é—´ï¼ˆæ¯«ç§’ï¼‰
+extern double chance;          //1-chanceä¸ºé€‰æ‹©éšæœºç­–ç•¥çš„æ¦‚ç‡
+extern double alpha;           //sasraç®—æ³•ä¸­çš„è¿­ä»£æ­¥é•¿
+extern double gamma;           //è¡°å‡å€¼
+extern double lambda;          //sarsa(lambda)ä¸­çš„lambda
+//extern double obstacleChance; //åœ°å›¾ä¸Šéšœç¢ç”Ÿæˆæ¦‚ç‡
+extern bool isAddRestriction;//æ˜¯å¦ç¢°åˆ°éšœç¢ç‰©å°±åœä¸‹æ¥è¿›è¡Œæ´—ä¸‹ä¸€è½®
+extern bool isVisuable;       //æ˜¯å¦å¯è§†åŒ–è®­ç»ƒè¿‡ç¨‹ï¼ˆä¼šå¾ˆæ…¢ï¼‰
 
-int R[gridX][gridY][4];     //rewardÖµ¾ØÕó 
-double Q[gridX][gridY][4];   //Ñ§Ï°µ½µÄÖªÊ¶,Q¾ØÕó
+int R[gridX][gridY][4];     //rewardå€¼çŸ©é˜µ 
+double Q[gridX][gridY][4];   //å­¦ä¹ åˆ°çš„çŸ¥è¯†,QçŸ©é˜µ
 double E[gridX][gridY][4];
 
 struct Point {
@@ -46,8 +46,8 @@ void initR() {
 	fill(R[0][0], R[0][0] + gridX * gridY * 4, -1);
 	for (int i = 0; i < gridX; i++) {
 		for (int j = 0; j < gridY; j++) {
-			if (i != 0 && i - 1 != 0 && M[i - 1][j] != -1) R[i][j][0] = 0;
-			if (j != 0 && j - 1 != 0 && M[i][j - 1] != -1) R[i][j][1] = 0;
+			if (i - 1 >= 0 && M[i - 1][j] != -1) R[i][j][0] = 0;
+			if (j - 1 >= 0 && M[i][j - 1] != -1) R[i][j][1] = 0;
 			if (i != gridX - 1 && M[i + 1][j] != -1) R[i][j][2] = 0;
 			if (j != gridY - 1 && M[i][j + 1] != -1) R[i][j][3] = 0;
 
@@ -67,7 +67,7 @@ void initR() {
 	}
 }
 
-void chooseRandomAction(int x, int y, int& direction) {  //Ëæ»ú²ßÂÔ
+void chooseRandomAction(int x, int y, int& direction) {  //éšæœºç­–ç•¥
 	//cout << "Random\n";
 	vector<int> nexts;
 	for (int j = 0; j < 4; j++) {
@@ -95,7 +95,7 @@ void chooseRandomAction(int x, int y, int& direction) {  //Ëæ»ú²ßÂÔ
 	}
 }
 
-void chooseMaxAction(int x, int y, int& direction) {   //×î´ó»¯Ñ¡Ôñ²ßÂÔ
+void chooseMaxAction(int x, int y, int& direction) {   //æœ€å¤§åŒ–é€‰æ‹©ç­–ç•¥
 	//cout << "Max\n";
 	int _direction = -1;
 	double maxQ = 0;
@@ -124,7 +124,7 @@ void chooseMaxAction(int x, int y, int& direction) {   //×î´ó»¯Ñ¡Ôñ²ßÂÔ
 	}
 }
 
-void chooseNextAction(int x, int y, int& direction, double chance) {  //¸ù¾İ¸ÅÂÊËæ»úÑ¡ÔñÉÏÁĞÁ½ÖÖ²ßÂÔµÄÒ»ÖÖ
+void chooseNextAction(int x, int y, int& direction, double chance) {  //æ ¹æ®æ¦‚ç‡éšæœºé€‰æ‹©ä¸Šåˆ—ä¸¤ç§ç­–ç•¥çš„ä¸€ç§
 	if (isSmaller(chance)) {
 		chooseMaxAction(x, y, direction);
 	}
@@ -133,7 +133,7 @@ void chooseNextAction(int x, int y, int& direction, double chance) {  //¸ù¾İ¸ÅÂÊ
 	}
 }
 
-double getmaxQ(int x, int y) {           //»ñµÃµ±Ç°£¨x,y£©×´Ì¬ÏÂµÄ×î´óQÖµ
+double getmaxQ(int x, int y) {           //è·å¾—å½“å‰ï¼ˆx,yï¼‰çŠ¶æ€ä¸‹çš„æœ€å¤§Qå€¼
 	double maxnum = 0;
 	for (int i = 0; i < 4; i++) {
 		if (R[x][y][i] != -1 && Q[x][y][i] > maxnum) maxnum = Q[x][y][i];
@@ -141,7 +141,7 @@ double getmaxQ(int x, int y) {           //»ñµÃµ±Ç°£¨x,y£©×´Ì¬ÏÂµÄ×î´óQÖµ
 	return maxnum;
 }
 
-void _printPath() {  //´òÓ¡×îÖÕÂ·¾¶
+void _printPath() {  //æ‰“å°æœ€ç»ˆè·¯å¾„
 	int x = startx;
 	int y = starty;
 	int direction = 0;
@@ -239,7 +239,7 @@ void Delay(int time)
 	while (clock() - now < time);
 }
 
-void train_QLearning() { //ÑµÁ·epochÂÖ´Î, Ëµµ½²»×öµ½£¬¹Û¿´ÏÂÒ»²½µÄ×î¸ßÆÚÍû£¬È´²»Ò»¶¨Ö´ĞĞÄÇ¸ö¶¯×÷
+void train_QLearning() { //è®­ç»ƒepochè½®æ¬¡, è¯´åˆ°ä¸åšåˆ°ï¼Œè§‚çœ‹ä¸‹ä¸€æ­¥çš„æœ€é«˜æœŸæœ›ï¼Œå´ä¸ä¸€å®šæ‰§è¡Œé‚£ä¸ªåŠ¨ä½œ
 	int successNum = 0;
 	for (int i = 0; i < epoch; i++) {
 		if (!isVisuable) {
@@ -283,7 +283,7 @@ void train_QLearning() { //ÑµÁ·epochÂÖ´Î, Ëµµ½²»×öµ½£¬¹Û¿´ÏÂÒ»²½µÄ×î¸ßÆÚÍû£¬È´²»
 	cout << "successNum:" << successNum << endl;
 }
 
-void train_Sarsa() {//Ëµµ½×öµ½£¬¹Û¿´ÏÂÒ»²½µÄ×î¸ßÆÚÍû£¬Ò²Ò»¶¨Ö´ĞĞÄÇ¸ö¶¯×÷£¬ºÍqleaenµÄ¸üĞÂ·½³Ì²»Í¬
+void train_Sarsa() {//è¯´åˆ°åšåˆ°ï¼Œè§‚çœ‹ä¸‹ä¸€æ­¥çš„æœ€é«˜æœŸæœ›ï¼Œä¹Ÿä¸€å®šæ‰§è¡Œé‚£ä¸ªåŠ¨ä½œï¼Œå’Œqleaençš„æ›´æ–°æ–¹ç¨‹ä¸åŒ
 	int successNum = 0;
 	for (int i = 0; i < epoch; i++) {
 		if (!isVisuable) {
@@ -334,7 +334,7 @@ void train_Sarsa() {//Ëµµ½×öµ½£¬¹Û¿´ÏÂÒ»²½µÄ×î¸ßÆÚÍû£¬Ò²Ò»¶¨Ö´ĞĞÄÇ¸ö¶¯×÷£¬ºÍqlea
 	cout << "successNum:" << successNum << endl;
 }
 
-void train_SarsaLambda() {//ºÍsarsa×ÜµÄË¼ÏëÀàËÆ£¬²»¹ısarsaÖ»ÓĞµ±×ßµ½ÓĞ½±ÀøµÄÒ»²½Ê±£¬²Å»á¸üĞÂÇ°Ò»²½£¬¶øsarsa£¨lambda£©ÔÚ×ßµ½ÓĞ½±ÀøµÄÒ»²½Ê±£¬»á¸üĞÂÖ®Ç°×ßµÄÃ¿Ò»²½
+void train_SarsaLambda() {//å’Œsarsaæ€»çš„æ€æƒ³ç±»ä¼¼ï¼Œä¸è¿‡sarsaåªæœ‰å½“èµ°åˆ°æœ‰å¥–åŠ±çš„ä¸€æ­¥æ—¶ï¼Œæ‰ä¼šæ›´æ–°å‰ä¸€æ­¥ï¼Œè€Œsarsaï¼ˆlambdaï¼‰åœ¨èµ°åˆ°æœ‰å¥–åŠ±çš„ä¸€æ­¥æ—¶ï¼Œä¼šæ›´æ–°ä¹‹å‰èµ°çš„æ¯ä¸€æ­¥
 	int successNum = 0;
 	for (int i = 0; i < epoch; i++) {
 		initE();
