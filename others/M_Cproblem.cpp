@@ -7,36 +7,36 @@
 
 using namespace std;
 
-int maxRandomNum = 1000000;   //Ëæ»úÊıÉèÖÃ
-int randomSeed = 10000;//Ëæ»úÊıÖÖ×Ó
+int maxRandomNum = 1000000;   //éšæœºæ•°è®¾ç½®
+int randomSeed = 10000;//éšæœºæ•°ç§å­
 
-HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);//¶¨ÒåÏÔÊ¾Æ÷¾ä±ú±äÁ¿,²¢ÇÒÕâ¸öÖ»ÄÜÔÚÃ¿¸öÍ·ÎÄ¼şÖĞµ¥¶À¶¨Òå¾ä±úºÍº¯Êı£¬·ñÔòÎŞĞ§
-void gotoxy(HANDLE hOut, int x, int y)        //ÆäÖĞx£¬yÊÇÓëÕı³£Àí½âÏà·´µÄ£¬×¢ÒâÇø·Ö
+HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);//å®šä¹‰æ˜¾ç¤ºå™¨å¥æŸ„å˜é‡,å¹¶ä¸”è¿™ä¸ªåªèƒ½åœ¨æ¯ä¸ªå¤´æ–‡ä»¶ä¸­å•ç‹¬å®šä¹‰å¥æŸ„å’Œå‡½æ•°ï¼Œå¦åˆ™æ— æ•ˆ
+void gotoxy(HANDLE hOut, int x, int y)        //å…¶ä¸­xï¼Œyæ˜¯ä¸æ­£å¸¸ç†è§£ç›¸åçš„ï¼Œæ³¨æ„åŒºåˆ†
 {
 	COORD pos;
-	pos.X = x;             //ºá×ø±ê
-	pos.Y = y;             //×İ×ø±ê
+	pos.X = x;             //æ¨ªåæ ‡
+	pos.Y = y;             //çºµåæ ‡
 	SetConsoleCursorPosition(hOut, pos);
 }
 
-int getRandomChance() {    //Éú³É[0£¬maxRandomNum-1]Ëæ»úÊı
+int getRandomChance() {    //ç”Ÿæˆ[0ï¼ŒmaxRandomNum-1]éšæœºæ•°
 	static uniform_int_distribution<unsigned >u1(0, maxRandomNum - 1);
 	static default_random_engine e1;
 	return u1(e1);
 }
 
-int getRandomNumber(int number) {    //Éú³É[0:number-1]Ëæ»úÊı
+int getRandomNumber(int number) {    //ç”Ÿæˆ[0:number-1]éšæœºæ•°
 	return getRandomChance() * (number + 1) / maxRandomNum;
 }
 
-void initRandomGenerator() {       //³õÊ¼»¯Ëæ»úÊıÉú³ÉÆ÷
+void initRandomGenerator() {       //åˆå§‹åŒ–éšæœºæ•°ç”Ÿæˆå™¨
 	for (int i = 0; i < randomSeed; i++) {
 		getRandomNumber(0);
 	}
 }
 
-const int n = 3;//´«½ÌÊ¿/Ò°ÈËÊıÄ¿
-const int k = 2;//´¬µÄÔØ¿ÍÁ¿
+const int n = 8;//ä¼ æ•™å£«/é‡äººæ•°ç›®
+const int k = 4;//èˆ¹çš„è½½å®¢é‡
 
 class state {
 public:
@@ -49,10 +49,10 @@ public:
 	}
 
 	bool boat;  //0:left, 1:right
-	int leftM;  //×ó°¶´«½ÌÊ¿
-	int leftC;  //×ó°¶Ò°ÈË
-	int rightM; //ÓÒ°¶´«½ÌÊ¿
-	int rightC; //ÓÒ°¶Ò°ÈË
+	int leftM;  //å·¦å²¸ä¼ æ•™å£«
+	int leftC;  //å·¦å²¸é‡äºº
+	int rightM; //å³å²¸ä¼ æ•™å£«
+	int rightC; //å³å²¸é‡äºº
 	state() {
 		boat = 0;
 		leftM = n;
@@ -90,13 +90,13 @@ ostream& operator<<(ostream& cout, state& s) {
 state* start = new state(0, n, n, 0, 0);
 state* final = new state(1, 0, 0, n, n);
 
-struct hash_state {  //unordered_map¼ÆËã¹şÏ£Öµ
+struct hash_state {  //unordered_mapè®¡ç®—å“ˆå¸Œå€¼
 	size_t operator()(const state& _state) const {
 		return 1 * hash<bool>()(_state.boat) +
-			2 * hash<int>()(_state.leftM) +
-			3 * hash<int>()(_state.leftC) +
-			4 * hash<int>()(_state.rightM) +
-			5 * hash<int>()(_state.rightC);
+			10 * hash<int>()(_state.leftM) +
+			100 * hash<int>()(_state.leftC) +
+			1000 * hash<int>()(_state.rightM) +
+			10000 * hash<int>()(_state.rightC);
 	}
 };
 
@@ -115,9 +115,10 @@ bool validOnBoat(int M, int C, int currentM, int currentC) {
 
 void search() {
 	state temp;
+	start->setself();
+	final->setself();
 	state* current = start;
 	state* nextState;
-	current->setself();
 	current->setindex(1);
 
 	int index = 0;
@@ -154,8 +155,8 @@ void search() {
 			currentC = current->rightC;
 		}
 
-		for (int i = 0; i <= k; i++) {           //´¬ÉÏÔØµÄ´«µÀÊ¿ÊıÁ¿
-			for (int j = 0; j <= k - i; j++) {   //´¬ÉÏÔØµÄÒ°ÈËÊıÁ¿
+		for (int i = 0; i <= k; i++) {           //èˆ¹ä¸Šè½½çš„ä¼ é“å£«æ•°é‡
+			for (int j = 0; j <= k - i; j++) {   //èˆ¹ä¸Šè½½çš„é‡äººæ•°é‡
 				if (validOnBoat(i, j, currentM, currentC)) {
 					next_boat = !(current->boat);
 					if (current->boat == 0) {
@@ -173,9 +174,9 @@ void search() {
 					if ((next_lM < next_lC && next_lM != 0) || (next_rM < next_rC && next_rM != 0)) continue;
 					nextState = new state(next_boat, next_lM, next_lC, next_rM, next_rC);
 					if (hashmap.count(*nextState) == 0 || (hashmap.count(*nextState) == 1 && hashmap[*nextState] > index + 1)) {
-						nextState->previous = current->self;//currentÊÇÕ»ÉÏµÄ±¾µØ±äÁ¿£¬ÏëÒª»ñÈ¡currentµÄµØÖ·ĞèÒªÓÃcurrent->self
-						nextState->setindex(index + 1);
 						nextState->setself();
+						nextState->previous = current->self;
+						nextState->setindex(index + 1);
 						hashmap[*nextState] = index + 1;
 						pqueue.push(*nextState);
 					}
@@ -183,9 +184,13 @@ void search() {
 			}
 		}
 	}
+	if (*current != *final) {
+		cout << "this situation can`t be solved.\n";
+		return;
+	}
 
 	while (*current != *start) {
-		current->previous->next = current;
+		current->previous->next = current->self;
 		current = current->previous;
 	}
 
