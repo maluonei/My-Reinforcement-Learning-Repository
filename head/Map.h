@@ -11,48 +11,48 @@ using namespace std;
 const int gridX = 50;
 const int gridY = 50;
 
-int startx = 6; //ÆğÊ¼µãxÓëy
+int startx = 6; //èµ·å§‹ç‚¹xä¸y
 int starty = 3;
-int endx = 48;   //ÖÕµãxÓëy
+int endx = 48;   //ç»ˆç‚¹xä¸y
 int endy = 38;
-double obstacleChance = 0.33; //µØÍ¼ÉÏÕÏ°­Éú³É¸ÅÂÊ
-int maxRandomNum = 1000000;   //Ëæ»úÊıÉèÖÃ
-int randomSeed = 500;//Ëæ»úÊıÖÖ×Ó
+double obstacleChance = 0.33; //åœ°å›¾ä¸Šéšœç¢ç”Ÿæˆæ¦‚ç‡
+int maxRandomNum = 1000000;   //éšæœºæ•°è®¾ç½®
+int randomSeed = 500;//éšæœºæ•°ç§å­
 
-int M[gridX][gridY];         //Map: -1ÎªÕÏ°­£¬ 0Îª¿ÉÒÔ×ß, 1ÎªÖÕµã
-int path[gridX][gridY];      //path¾ØÕó£¬ÓÃÀ´»æÖÆ×îÖÕÂ·¾¶
+int M[gridX][gridY];         //Map: -1ä¸ºéšœç¢ï¼Œ 0ä¸ºå¯ä»¥èµ°, 1ä¸ºç»ˆç‚¹
+int path[gridX][gridY];      //pathçŸ©é˜µï¼Œç”¨æ¥ç»˜åˆ¶æœ€ç»ˆè·¯å¾„
 int previous[gridX][gridY];
 int nextStep[4][2] = {
 	-1,  0,
 	 0, -1,
 	 1,  0,
-	 0,  1 };  //¿ÉÒÔĞĞ¶¯µÄËÄ¸ö·½Ïò
+	 0,  1 };  //å¯ä»¥è¡ŒåŠ¨çš„å››ä¸ªæ–¹å‘
 
-HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);//¶¨ÒåÏÔÊ¾Æ÷¾ä±ú±äÁ¿,²¢ÇÒÕâ¸öÖ»ÄÜÔÚÃ¿¸öÍ·ÎÄ¼şÖĞµ¥¶À¶¨Òå¾ä±úºÍº¯Êı£¬·ñÔòÎŞĞ§
-void gotoxy(HANDLE hOut, int x, int y)//ÆäÖĞx£¬yÊÇÓëÕı³£Àí½âÏà·´µÄ£¬×¢ÒâÇø·Ö
+HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);//å®šä¹‰æ˜¾ç¤ºå™¨å¥æŸ„å˜é‡,å¹¶ä¸”è¿™ä¸ªåªèƒ½åœ¨æ¯ä¸ªå¤´æ–‡ä»¶ä¸­å•ç‹¬å®šä¹‰å¥æŸ„å’Œå‡½æ•°ï¼Œå¦åˆ™æ— æ•ˆ
+void gotoxy(HANDLE hOut, int x, int y)//å…¶ä¸­xï¼Œyæ˜¯ä¸æ­£å¸¸ç†è§£ç›¸åçš„ï¼Œæ³¨æ„åŒºåˆ†
 {
 	COORD pos;
-	pos.X = x;             //ºá×ø±ê
-	pos.Y = y;            //×İ×ø±ê
+	pos.X = x;             //æ¨ªåæ ‡
+	pos.Y = y;            //çºµåæ ‡
 	SetConsoleCursorPosition(hOut, pos);
 }
 
 
-int getRandomChance() {    //Éú³É[0£¬maxRandomNum-1]Ëæ»úÊı
+int getRandomChance() {    //ç”Ÿæˆ[0ï¼ŒmaxRandomNum-1]éšæœºæ•°
 	static uniform_int_distribution<unsigned >u1(0, maxRandomNum - 1);
 	static default_random_engine e1;
 	return u1(e1);
 }
 
-int getRandomNumber(int number) {    //Éú³É[0:number-1]Ëæ»úÊı
+int getRandomNumber(int number) {    //ç”Ÿæˆ[0:number-1]éšæœºæ•°
 	return getRandomChance() * (number + 1) / maxRandomNum;
 }
 
-bool isSmaller(double chance) {      //½øĞĞÒ»´Î[0,1]Ëæ»ú£¬Ëæ»úÖµĞ¡ÓÚchanceµÄ¸ÅÂÊ
+bool isSmaller(double chance) {      //è¿›è¡Œä¸€æ¬¡[0,1]éšæœºï¼Œéšæœºå€¼å°äºchanceçš„æ¦‚ç‡
 	return getRandomChance() < maxRandomNum * chance;
 }
 
-void initRandomGenerator() {       //³õÊ¼»¯Ëæ»úÊıÉú³ÉÆ÷
+void initRandomGenerator() {       //åˆå§‹åŒ–éšæœºæ•°ç”Ÿæˆå™¨
 	for (int i = 0; i < randomSeed; i++) {
 		getRandomNumber(0);
 	}
@@ -68,7 +68,7 @@ void initPrevious() {
 void initM() {
 	for (int i = 0; i < gridX; i++) {
 		for (int j = 0; j < gridY; j++) {
-			if (isSmaller(obstacleChance)) {   //°Ù·ÖÖ®30µÄµØÍ¼¸ñ×ÓÊÇÕÏ°­
+			if (isSmaller(obstacleChance)) {   //ç™¾åˆ†ä¹‹30çš„åœ°å›¾æ ¼å­æ˜¯éšœç¢
 				M[i][j] = -1;
 			}
 			else {
@@ -77,6 +77,7 @@ void initM() {
 		}
 	}
 	M[endx][endy] = 1;
+	M[startx][starty] = 0;
 }
 
 void printM() {
